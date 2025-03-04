@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>5 Days Forecast And Chatbot</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #2c3e50;
+        color: #ffffff;
+        font-family: Poppins, sans-serif;
+      }
+
+      .dialog-box {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: none;
+      }
+
+      .dialog-content {
+        background-color: #1f2937;
+        width: 100%;
+        max-width: 600px;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        min-height: 60vh;
+        max-height: 85vh;
+        overflow-y: auto;
+      }
+
+      .dialog-box.active {
+        display: flex;
+      }
+
+      @media (max-width: 640px) {
+        .dialog-content {
+          max-width: 90%;
+          min-height: 50vh;
+          max-height: 70vh;
+          padding: 10px;
+        }
+
+        .feature-item {
+          padding: 8px;
+          font-size: 14px;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+
+        #chat-container {
+          height: 150px;
+        }
+
+        .p-4.flex.items-center.space-x-3 {
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        #userInput,
+        #sendButton {
+          width: 100%;
+        }
+      }
+
+      .bot-icon-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: #4b5563;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .bot-icon-container:hover {
+        background-color: #6366f1;
+      }
+
+      .bot-icon i {
+        color: white;
+        font-size: 24px;
+      }
+
+      .scrollable {
+        max-height: 500px;
+        overflow-y: auto;
+      }
+
+      .scrollable::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .scrollable::-webkit-scrollbar-thumb {
+        background-color: rgba(100, 100, 100, 0.5);
+        border-radius: 8px;
+      }
+
+      body {
+        background-color: #1a1a1a;
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+
+      #chat-container {
+        flex-grow: 1;
+        overflow-y: auto;
+      }
+
+      .feature-item {
+        transition: transform 0.2s;
+      }
+
+      .feature-item:hover {
+        transform: scale(1.05);
+      }
+
+      #loading-spinner {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        color: #333;
+        z-index: 1000;
+        display: none;
+      }
+
+      #error-message.active {
+        display: block;
+      }
+
+      input[type="checkbox"] {
+        appearance: none;
+        background-color: #2d3748;
+        border-radius: 0.25rem;
+        width: 1.25rem;
+        height: 1.25rem;
+        display: inline-block;
+        position: relative;
+      }
+
+      input[type="checkbox"]:checked {
+        background-color: currentColor;
+      }
+
+      input[type="checkbox"]:checked::before {
+        content: "";
+        position: absolute;
+        top: 0.25rem;
+        left: 0.25rem;
+        width: 0.75rem;
+        height: 0.75rem;
+        background-color: #fff;
+      }
+
+      #filters-modal {
+        z-index: 50;
+      }
+
+      .filter-options {
+        position: relative;
+      }
+
+      .form-checkbox {
+        position: relative;
+        z-index: 10;
+      }
+
+      .form-checkbox:checked {
+        @apply bg-indigo-600 border-indigo-600;
+      }
+
+      .modal-content {
+        z-index: 20;
+      }
+
+      button {
+        transition: background-color 0.3s ease;
+      }
+
+      .hamburger,
+      .close-menu {
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: white;
+      }
+
+      .close-menu {
+        display: none;
+      }
+
+      aside {
+        transition: all 0.3s ease;
+      }
+
+      aside.hidden {
+        display: none;
+      }
+
+      aside.active {
+        display: block;
+        position: absolute;
+        z-index: 50;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 64%;
+        background-color: #1f2937;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+      }
+
+      .overlay {
+        position: fixed;
+        z-index: 40;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+      }
+
+      .overlay.active {
+        display: block;
+      }
+
+      @media (max-width: 768px) {
+        header {
+          flex-direction: row;
+          flex-wrap: nowrap;
+          justify-content: space-between;
+        }
+
+        .hamburger {
+          display: block;
+        }
+
+        #city-input {
+          padding: 0.4rem;
+          font-size: 0.85rem;
+          width: 160px;
+        }
+
+        #search-btn {
+          padding: 0.5rem 1rem;
+          font-size: 0.85rem;
+          height: auto;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          transition: background-color 0.3s;
+        }
+      }
+      @media (max-width: 480px) {
+        #city-input {
+          padding: 0.3rem;
+          font-size: 0.75rem;
+          width: 140px;
+        }
+
+        #search-btn {
+          padding: 0.3rem 0.6rem;
+          font-size: 0.75rem;
+        }
+      }
+
+      @media (max-width: 1024px) {
+        .flex-1 {
+          flex-direction: column;
+        }
+
+        #chat-container {
+          width: 100%;
+          margin-top: 20px;
+          height: auto;
+        }
+      }
+
+      @media (max-width: 768px) {
+        #weather-container {
+          width: 100%;
+        }
+
+        #chat-container {
+          height: auto;
+        }
+      }
+
+      @media (max-width: 480px) {
+        #weather-container,
+        #chat-container {
+          width: 100%;
+        }
+
+        #chat-container {
+          height: auto;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-900 font-sans text-white">
+    <div class="flex h-screen">
+      <aside
+        id="sidebar"
+        class="bg-gradient-to-b from-gray-900 via-gray-800 to-gray-700 w-64 p-6 hidden md:flex flex-col shadow-xl transform transition-transform duration-300"
+      >
+        <div
+          class="text-4xl font-extrabold text-white mb-12 tracking-widest uppercase"
+        >
+          <span
+            class="bg-clip-text text-transparent bg-gradient-to-r from-gray-300 to-gray-500"
+            >Cypher Checks!</span
+          >
+        </div>
+        <ul class="space-y-6">
+          <li>
+            <a
+              href="index.html"
+              id="dashboard-link"
+              class="flex items-center text-lg font-semibold text-gray-300 hover:text-white hover:bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 p-3 rounded-lg shadow-md transition duration-300 ease-in-out"
+            >
+              <svg
+                class="w-6 h-6 mr-3 text-gray-400"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 4h4"
+                ></path>
+              </svg>
+              Dashboard
+            </a>
+          </li>
+          <li>
+            <a
+              href="second.html"
+              id="tables-link"
+              class="flex items-center bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 text-lg font-semibold text-gray-300 hover:text-white hover:bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 p-3 rounded-lg shadow-md transition duration-300 ease-in-out"
+            >
+              <svg
+                class="w-6 h-6 mr-3 text-gray-400"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <path d="M3 9h18M9 21V9"></path>
+              </svg>
+              Tables
+            </a>
+          </li>
+        </ul>
+      </aside>
+
+      <div id="overlay" class="overlay"></div>
+
+      <div class="flex-1 flex flex-col">
+        <header
+          class="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 p-5 flex justify-between items-center text-gray-300 shadow-lg"
+        >
+          <div class="flex items-center space-x-6">
+            <span
+              id="hamburger-icon"
+              class="hamburger fas fa-bars text-white text-2xl cursor-pointer md:hidden"
+            ></span>
+            <span
+              id="close-icon"
+              class="close-menu fas fa-times text-white text-2xl hidden cursor-pointer"
+            ></span>
+
+            <div
+              class="flex items-center space-x-2 bg-gray-800 rounded-lg shadow-md px-2 py-1"
+            >
+              <input
+                type="text"
+                id="city-input"
+                placeholder="Enter city name"
+                class="p-3 bg-gray-700 text-white outline-none rounded-lg flex-grow"
+              />
+              <button
+                id="search-btn"
+                class="bg-gray-600 btn hover:bg-gray-500 text-white px-6 py-2 font-semibold rounded-lg"
+              >
+                Get Weather
+              </button>
+            </div>
+          </div>
+
+          <div class="user-profile flex items-center space-x-3">
+            <img
+              src="user.png"
+              alt="User Profile"
+              class="rounded-full w-10 h-10 border-2 border-gray-500"
+            />
+            <span class="text-white font-medium">User</span>
+          </div>
+        </header>
+
+        <div id="error-message" class="text-red-600"></div>
+
+        <div class="flex justify-center mt-6">
+          <button
+            id="open-filters"
+            class="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-2 font-semibold rounded-lg"
+          >
+            Filters
+          </button>
+        </div>
+
+        <div
+          id="filters-modal"
+          class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
+        >
+          <div class="bg-gray-800 rounded-lg shadow-lg p-6 max-w-sm w-full">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl text-white font-bold">Select Filters</h2>
+              <button
+                id="close-filters"
+                class="text-gray-400 hover:text-gray-100 focus:outline-none"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  class="w-6 h-6"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div class="filter-options space-y-4">
+              <label class="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  class="form-checkbox h-5 w-5 text-indigo-600 border-gray-400 rounded"
+                />
+                <span class="text-gray-200 font-medium"
+                  >Ascending Temperatures</span
+                >
+              </label>
+              <label class="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  class="form-checkbox h-5 w-5 text-green-600 border-gray-400 rounded"
+                />
+                <span class="text-gray-200 font-medium"
+                  >Descending Temperatures</span
+                >
+              </label>
+              <label class="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  class="form-checkbox h-5 w-5 text-teal-600 border-gray-400 rounded"
+                />
+                <span class="text-gray-200 font-medium">Show Rainy Days</span>
+              </label>
+              <label class="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  class="form-checkbox h-5 w-5 text-red-600 border-gray-400 rounded"
+                />
+                <span class="text-gray-200 font-medium"
+                  >Highest Temperature</span
+                >
+              </label>
+            </div>
+
+            <div class="mt-6 flex justify-center gap-3">
+              <button
+                id="reset-btn"
+                class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 font-semibold rounded-lg"
+              >
+                Reset Filters
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="weather-container" class="p-8">
+          <div class="overflow-x-auto">
+            <table
+              class="min-w-full leading-normal table-auto text-center text-gray-200 bg-gray-800 rounded-lg overflow-hidden shadow-lg"
+            >
+              <thead>
+                <tr>
+                  <th
+                    class="px-3 py-2 md:px-5 md:py-3 border-b-2 border-gray-700 text-xs sm:text-sm font-semibold text-gray-200 uppercase tracking-wider whitespace-nowrap"
+                  >
+                    Date
+                  </th>
+                  <th
+                    class="px-3 py-2 md:px-5 md:py-3 border-b-2 border-gray-700 text-xs sm:text-sm font-semibold text-gray-200 uppercase tracking-wider"
+                  >
+                    Temperature
+                  </th>
+                  <th
+                    class="px-3 py-2 md:px-5 md:py-3 border-b-2 border-gray-700 text-xs sm:text-sm font-semibold text-gray-200 uppercase tracking-wider"
+                  >
+                    Weather
+                  </th>
+                  <th
+                    class="px-3 py-2 md:px-5 md:py-3 border-b-2 border-gray-700 text-xs sm:text-sm font-semibold text-gray-200 uppercase tracking-wider whitespace-nowrap"
+                  >
+                    City
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="weather-data"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="pagination" class="flex justify-center mt-4 space-x-4">
+          <button
+            id="prev-btn"
+            class="bg-gray-600 btn hover:bg-gray-500 text-white px-6 py-2 font-semibold rounded-lg"
+          >
+            Previous
+          </button>
+          <button
+            id="next-btn"
+            class="bg-gray-600 btn hover:bg-gray-500 text-white px-6 py-2 font-semibold rounded-lg"
+          >
+            Next
+          </button>
+        </div>
+
+        <div class="flex justify-center mt-6">
+          <label class="cursor-pointer">
+            <input type="checkbox" id="unit-toggle" class="mr-2" /> Toggle to
+            Fahrenheit
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="loading-spinner"
+      style="display: none"
+      class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+    >
+      <i class="fas fa-spinner fa-spin text-white text-5xl"></i>
+    </div>
+
+    <div class="bot-icon-container" id="botIcon">
+      <div class="bot-icon">
+        <i class="fas fa-robot"></i>
+      </div>
+    </div>
+
+    <div id="dialogBox" class="dialog-box">
+      <div class="dialog-content">
+        <div
+          class="flex flex-col items-center max-w-2xl mx-auto bg-gray-900 rounded-lg shadow-lg overflow-hidden"
+        >
+          <h1 class="text-5xl font-bold mb-6 text-center">
+            <span
+              class="bg-clip-text text-transparent bg-gradient-to-r from-gray-300 to-gray-500"
+            >
+              Cypher BOT!
+            </span>
+          </h1>
+
+          <div class="grid grid-cols-2 gap-4 p-4">
+            <div class="feature-item bg-gray-700 rounded-lg p-4 shadow-md">
+              <p class="text-center text-gray-200">
+                Get immediate answers to your questions about the weather,
+                forecasts, and more.
+              </p>
+            </div>
+            <div class="feature-item bg-gray-700 rounded-lg p-4 shadow-md">
+              <p class="text-center text-gray-200">
+                Simply type your query, and the chatbot will assist you
+                effortlessly.
+              </p>
+            </div>
+            <div class="feature-item bg-gray-700 rounded-lg p-4 shadow-md">
+              <p class="text-center text-gray-200">
+                Powered by advanced APIs, providing accurate weather
+                information.
+              </p>
+            </div>
+            <div class="feature-item bg-gray-700 rounded-lg p-4 shadow-md">
+              <p class="text-center text-gray-200">
+                Engage in a seamless conversation with the chatbot for all your
+                queries.
+              </p>
+            </div>
+          </div>
+
+          <div class="w-full flex flex-col items-center mt-4">
+            <div
+              id="chat-container"
+              class="scrollable p-6 flex flex-col space-y-4 overflow-y-auto w-full md:w-2/3"
+              style="height: 200px"
+            ></div>
+
+            <div
+              class="bg-gray-800 p-4 flex items-center space-x-3 w-full md:w-2/3 mt-2"
+            >
+              <input
+                type="text"
+                id="userInput"
+                class="bg-gray-700 text-white p-3 rounded-lg flex-grow focus:ring-2 focus:ring-blue-500"
+                placeholder="Type a message..."
+              />
+              <button
+                id="sendButton"
+                class="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-2 font-semibold rounded-lg transition duration-300 ease-in-out"
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const botIcon = document.getElementById("botIcon");
+      const dialogBox = document.getElementById("dialogBox");
+
+      function toggleDialog() {
+        dialogBox.classList.toggle("active");
+      }
+
+      botIcon.addEventListener("click", toggleDialog);
+
+      dialogBox.addEventListener("click", (e) => {
+        if (e.target === dialogBox) {
+          toggleDialog();
+        }
+      });
+    </script>
+
+    <script src="second.js"></script>
+    <script src="chatbot.js"></script>
+  </body>
+</html>
