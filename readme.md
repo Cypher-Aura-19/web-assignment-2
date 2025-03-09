@@ -110,3 +110,5 @@ If the user enters an invalid city, the application displays an error message in
 ## Styling
 
 The dashboard uses a professional black-themed design that adheres to HCI (Human-Computer Interaction) principles, making it visually appealing and easy to use. The UI is responsive, ensuring compatibility across devices and screen sizes.
+
+# my name is talha rizwan
